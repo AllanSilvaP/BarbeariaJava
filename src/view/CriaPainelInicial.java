@@ -2,7 +2,7 @@ package view;
 
 import javax.swing.*;
 import java.awt.*;
-//imports para os videos
+// Imports para os vídeos
 import javafx.embed.swing.JFXPanel;
 import java.net.URL;
 import javafx.geometry.Pos;
@@ -11,9 +11,9 @@ import javafx.scene.Scene;
 import javafx.scene.media.Media;
 import javafx.scene.media.MediaView;
 import javafx.scene.layout.StackPane;
- 
- // Painel Inicial com Vídeo
- public class CriaPainelInicial extends MontaPainel implements Video {
+
+// Painel Inicial com Vídeo
+public class CriaPainelInicial extends MontaPainel implements Video {
     private JFXPanel painelVideo;
 
     @Override
@@ -22,6 +22,15 @@ import javafx.scene.layout.StackPane;
         setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 20));
         setBackground(new Color(51, 51, 51));
 
+        // Título centralizado
+        JLabel titulo = new JLabel("Bem-vindo ao Nosso Salão!");
+        titulo.setHorizontalAlignment(SwingConstants.CENTER);
+        titulo.setFont(new Font("Arial", Font.BOLD, 24));
+        titulo.setForeground(new Color(255, 255, 255));
+        titulo.setBorder(BorderFactory.createEmptyBorder(10, 0, 20, 0)); // Espaçamento inferior
+        add(titulo, BorderLayout.NORTH);
+
+        // Painel de vídeo
         painelVideo = new JFXPanel();
         iniciaVideo(painelVideo);
         JPanel videoPanel = new JPanel(new BorderLayout());
@@ -29,33 +38,34 @@ import javafx.scene.layout.StackPane;
         videoPanel.add(painelVideo, BorderLayout.CENTER);
         add(videoPanel, BorderLayout.CENTER);
 
-        // Texto descritivo
-        String mensagem = "Bem-vindo ao Nosso Salão!\n" +
-                "No nosso salão, oferecemos cortes de alta qualidade, feitos por profissionais experientes que estão sempre atentos às últimas tendências.\n"
-                +
-                "Valorizamos cada detalhe para garantir que você saia sempre satisfeito, com o visual impecável e renovado.\n"
-                +
-                "Estamos localizados na Ceilândia, QNN 22, LOTE 18, em um ponto fácil de encontrar: em frente ao CEISHOP e ao lado do ULTRABOX, na via da Fundação Bradesco.\n"
-                +
-                "Venha nos visitar e experimente um serviço de qualidade em um ambiente acolhedor e profissional!";
+        // Texto descritivo com estilo
+        String mensagem = "<html><body style='text-align: justify; font-family: Arial; font-size: 14px; color: white;'>" +
+                "<p>No nosso salão, oferecemos cortes de alta qualidade, feitos por profissionais experientes que estão " +
+                "sempre atentos às últimas tendências. Valorizamos cada detalhe para garantir que você saia sempre " +
+                "satisfeito, com o visual impecável e renovado.</p>" +
+                "<p>Estamos localizados na <b>Ceilândia, QNN 22, LOTE 18</b>, em um ponto fácil de encontrar: em frente " +
+                "ao CEISHOP e ao lado do ULTRABOX, na via da Fundação Bradesco.</p>" +
+                "<p>Venha nos visitar e experimente um serviço de qualidade em um ambiente acolhedor e profissional!</p>" +
+                "</body></html>";
 
-        JTextArea textoM = new JTextArea(mensagem);
+        JTextPane textoM = new JTextPane();
+        textoM.setContentType("text/html");
+        textoM.setText(mensagem);
         textoM.setEditable(false);
-        textoM.setLineWrap(true);
-        textoM.setWrapStyleWord(true);
-        textoM.setFont(new Font("Arial", Font.PLAIN, 14));
-        textoM.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
-        textoM.setBackground(new Color(51, 51, 51));
-        textoM.setForeground(Color.WHITE);
+        textoM.setOpaque(false);
 
-        add(new JScrollPane(textoM), BorderLayout.SOUTH);
+        JScrollPane scrollTexto = new JScrollPane(textoM);
+        scrollTexto.setBorder(BorderFactory.createEmptyBorder(10, 0, 0, 0));
+        scrollTexto.setOpaque(false);
+        scrollTexto.getViewport().setOpaque(false);
+        add(scrollTexto, BorderLayout.SOUTH);
     }
 
     @Override
     public void iniciaVideo(JFXPanel video) {
         javafx.application.Platform.runLater(() -> {
             try {
-                URL mediaUrl = getClass().getResource("VideoFundo2.mp4");
+                URL mediaUrl = getClass().getResource("/resources/VideoFundo2.mp4");
                 if (mediaUrl == null) {
                     throw new IllegalArgumentException("Arquivo não encontrado");
                 }

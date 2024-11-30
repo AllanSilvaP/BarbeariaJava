@@ -12,6 +12,7 @@ public class PainelMain extends JFrame {
     private final JButton Home;
     private final CardLayout mudaTela;
 
+    @SuppressWarnings("unused")
     public PainelMain(String titulo) {
         super(titulo);
 
@@ -30,7 +31,7 @@ public class PainelMain extends JFrame {
 
 
         // Aqui fica a imagem
-        ImageIcon icone = new ImageIcon(getClass().getResource("Barbearia-frente.png"));
+        ImageIcon icone = new ImageIcon(getClass().getResource("/resources/Barbearia-frente.png"));
         Image imgicon = icone.getImage().getScaledInstance(35, 35, Image.SCALE_SMOOTH);
 
         Logo = new JLabel(new ImageIcon(imgicon));

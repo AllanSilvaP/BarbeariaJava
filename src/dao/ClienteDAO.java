@@ -5,36 +5,45 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 
+import javax.swing.JOptionPane;
+
 import org.mindrot.jbcrypt.BCrypt;
 
 public class ClienteDAO {
 
     public void cadastrarClienteEConta(String nomeCliente, String data, String telefone, String email, String senha) {
         String senhaCripto = BCrypt.hashpw(senha, BCrypt.gensalt());
-    
-        String coamndoSQLCliente = "INSERT INTO Clientes (Nome, Data_Registro, Telefone, Email) VALUES (?, ?, ?, ?)";
+
         String comandoSqlConta = "INSERT INTO Conta (Email, Senha) VALUES (?, ?)";
-    
+        String comandoSQLCliente = "INSERT INTO Clientes (Nome, Data_Registro, Telefone, Id_Conta) VALUES (?, ?, ?, ?)";
+
         try (Connection connect = ConectaDB.getConnection()) {
-            try (PreparedStatement comandaSqlBarbeiro = connect.prepareStatement(coamndoSQLCliente)) {
-                comandaSqlBarbeiro.setString(1, nomeCliente);
-                comandaSqlBarbeiro.setString(2, data);
-                comandaSqlBarbeiro.setString(3, telefone);
-                comandaSqlBarbeiro.setString(4, email);
-                comandaSqlBarbeiro.executeUpdate();
-            }
-    
-            // Inserindo a conta na tabela Conta
-            try (PreparedStatement comandaSqlConta = connect.prepareStatement(comandoSqlConta)) {
+            // Inserindo a conta
+            try (PreparedStatement comandaSqlConta = connect.prepareStatement(comandoSqlConta, PreparedStatement.RETURN_GENERATED_KEYS)) {
                 comandaSqlConta.setString(1, email);
                 comandaSqlConta.setString(2, senhaCripto);
                 comandaSqlConta.executeUpdate();
+
+                // Recupera o ID gerado para a conta
+                try (ResultSet generatedKeys = comandaSqlConta.getGeneratedKeys()) {
+                    if (generatedKeys.next()) {
+                        int idConta = generatedKeys.getInt(1);
+
+                        // Inserindo cliente associado à conta
+                        try (PreparedStatement comandaSqlCliente = connect.prepareStatement(comandoSQLCliente)) {
+                            comandaSqlCliente.setString(1, nomeCliente);
+                            comandaSqlCliente.setString(2, data);
+                            comandaSqlCliente.setString(3, telefone);
+                            comandaSqlCliente.setInt(4, idConta);
+                            comandaSqlCliente.executeUpdate();
+                        }
+                    }
+                }
             }
-    
-            System.out.println("Cliente e conta cadastrados com sucesso!");
+            JOptionPane.showMessageDialog(null, "Cliente e conta cadastrados com sucesso!");
         } catch (SQLException e) {
             e.printStackTrace();
-            System.out.println("Erro ao cadastrar barbeiro e conta: " + e.getMessage());
+            JOptionPane.showMessageDialog(null, "Erro ao cadastrar cliente e conta: " + e.getMessage());
         }
     }
 
@@ -52,7 +61,7 @@ public class ClienteDAO {
                     boolean resultado = BCrypt.checkpw(Senha, senhaCripto);
                     return resultado;
                 } else {
-                    System.out.println("Email não encontrado.");  // Debug
+                    JOptionPane.showMessageDialog(null,"Email não encontrado.");  // Debug
                 }
             }
         } catch (SQLException e) {

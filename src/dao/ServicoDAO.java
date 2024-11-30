@@ -109,4 +109,21 @@ public class ServicoDAO {
         
         return servico;
     }
+
+    public List<String> obterServicos() {
+        List<String> servicos = new ArrayList<>();
+        String sql = "SELECT Nome_servico FROM Servicos";
+        
+        try (Connection conn = ConectaDB.getConnection();PreparedStatement stmt = conn.prepareStatement(sql);ResultSet rs = stmt.executeQuery()) {
+            
+            while (rs.next()) {
+                servicos.add(rs.getString("Nome_servico"));
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        
+        return servicos;
+    }
+    
 }

@@ -2,13 +2,18 @@ package view;
 
 import javax.swing.*;
 import java.awt.*;
-import java.util.List;
-import dao.AgendaDAO;
+
 //pacotes
 import dao.ClienteDAO;
+import dao.ServicoDAO;
+import dao.AgendaDAO;
+import dao.BarbeiroDAO;
 
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.sql.Timestamp;
+import java.time.LocalDateTime;
+import java.util.List;
 //data
 import java.util.Date;
 //imports calendarios
@@ -19,7 +24,6 @@ import com.toedter.calendar.JDateChooser;
 public class CriaPainelAgendamento extends MontaPainel {
     // Telas
     private CardLayout mudaTelaAgendamento;
-    private JPanel painelAgendamento;
     private JPanel painelPrincipal;
     // LOGIN E CADASTRO
     private JLabel anuncio;
@@ -258,29 +262,106 @@ public class CriaPainelAgendamento extends MontaPainel {
         gbc.gridwidth = 2;
         painelAgenda.add(btAgendar, gbc);
 
-        // Definindo o horário disponível
         btAgendar.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                atualizaHorariosDisponiveis(); // Atualiza os horários
+                // Recuperar os dados inseridos pelo usuário
+                String nomeCliente = nomeUsuarioJ.getText(); // Nome do Cliente
+                String tipoCorte = (String) tipoCorteJ.getSelectedItem(); // Tipo de Corte
+                String barbeiroSelecionado = (String) escolhaBarbeiro.getSelectedItem(); // Nome do Barbeiro
+                String horarioSelecionado = (String) escolhaHorario.getSelectedItem(); // Horário escolhido
+        
+                // Obter a data escolhida pelo usuário
+                java.util.Date dataEscolhida = escolhaData.getDate();
+                if (dataEscolhida == null) {
+                    JOptionPane.showMessageDialog(null, "Por favor, selecione uma data.");
+                    return;
+                }
+        
+                // Converter para LocalDateTime para manipulação de data e hora
+                try {
+                    int hora = Integer.parseInt(horarioSelecionado.split(":")[0]);
+                    int minuto = Integer.parseInt(horarioSelecionado.split(":")[1]);
+        
+                    LocalDateTime novoHorario = LocalDateTime
+                            .ofInstant(dataEscolhida.toInstant(), java.time.ZoneId.systemDefault())
+                            .withHour(hora)
+                            .withMinute(minuto);
+        
+                    // Buscar os IDs usando os métodos do AgendaDAO
+                    AgendaDAO agendaDAO = new AgendaDAO();
+                    int idCliente = agendaDAO.obterIdClientePorNome(nomeCliente);
+                    int idServico = agendaDAO.obterIdServicoPorNome(tipoCorte);
+                    int idBarbeiro = agendaDAO.obterIdBarbeiroPorNome(barbeiroSelecionado);
+        
+                    if (idCliente != -1 && idServico != -1 && idBarbeiro != -1) {
+                        // Chamar o método de agendamento com os IDs e o horário
+                        Timestamp horarioAgendamento = Timestamp.valueOf(novoHorario); // Convertendo para Timestamp
+                        boolean sucesso = agendaDAO.agendarServico(idCliente, idBarbeiro, idServico, horarioAgendamento);
+        
+                        if (sucesso) {
+                            JOptionPane.showMessageDialog(null, "Serviço agendado com sucesso!");
+                        } else {
+                            JOptionPane.showMessageDialog(null, "Erro ao agendar o serviço.");
+                        }
+                    } else {
+                        JOptionPane.showMessageDialog(null, "Erro: Cliente, Serviço ou Barbeiro não encontrados.");
+                    }
+                } catch (Exception ex) {
+                    JOptionPane.showMessageDialog(null, "Erro ao converter horário.");
+                }
+            }
+        });
+        
+        // Preencher os ComboBoxes ao inicializar a interface
+        BarbeiroDAO barbeiroDAO = new BarbeiroDAO();
+        ServicoDAO servicoDAO = new ServicoDAO();
+        List<String> barbeirosList = barbeiroDAO.obterBarbeiros();
+        List<String> servicosList = servicoDAO.obterServicos();
+        
+        DefaultComboBoxModel<String> barbeirosModel = new DefaultComboBoxModel<>(barbeirosList.toArray(new String[0]));
+        escolhaBarbeiro.setModel(barbeirosModel);
+        
+        DefaultComboBoxModel<String> servicosModel = new DefaultComboBoxModel<>(servicosList.toArray(new String[0]));
+        tipoCorteJ.setModel(servicosModel);
+              
+
+        escolhaData.getDateEditor().addPropertyChangeListener("date", new java.beans.PropertyChangeListener() {
+            @Override
+            public void propertyChange(java.beans.PropertyChangeEvent e) {
+                atualizarHorariosDisponiveis(); // Atualiza os horários quando a data for alterada
             }
         });
 
         return painelAgenda;
     }
 
-    // Método para atualizar horários disponíveis
-   private void atualizaHorariosDisponiveis() {
-    AgendaDAO agendaDAO = new AgendaDAO();
-    String nomeBarbeiroSelecionado = (String) escolhaBarbeiro.getSelectedItem();
-    String dataSelecionada = new java.text.SimpleDateFormat("yyyy-MM-dd").format(escolhaData.getDate());
-    int idBarbeiro = agendaDAO.getIdBarbeiroPeloNome(nomeBarbeiroSelecionado); 
-    java.sql.Date data = java.sql.Date.valueOf(dataSelecionada);
-    List<String> horariosDisponiveis = agendaDAO.getHorariosDisponiveis(idBarbeiro, data);
+    private void atualizarHorariosDisponiveis() {
+        BarbeiroDAO barbeiroDAO = new BarbeiroDAO();
+        // Obter o barbeiro selecionado e a data escolhida
+        String barbeiroSelecionado = (String) escolhaBarbeiro.getSelectedItem();
+        Date dataEscolhida = escolhaData.getDate();
 
-    escolhaHorario.removeAllItems();
-    for (String horario : horariosDisponiveis) {
-        escolhaHorario.addItem(horario);
+        // Converter para java.sql.Date
+        java.sql.Date sqlData = new java.sql.Date(dataEscolhida.getTime());
+
+        // Obter o ID do barbeiro com base no nome
+        int idBarbeiro = barbeiroDAO.obterIdBarbeiro(barbeiroSelecionado);
+
+        // Consultar horários disponíveis no banco de dados
+        AgendaDAO agendaDAO = new AgendaDAO();
+        List<String> horariosIndisponiveis = agendaDAO.getHorariosDisponiveis(idBarbeiro, sqlData);
+
+        // Limpar os horários exibidos atualmente
+        escolhaHorario.removeAllItems();
+
+        // Adicionar os horários disponíveis à JComboBox
+        for (String horario : horario) {
+            if (!horariosIndisponiveis.contains(horario)) {
+                escolhaHorario.addItem(horario);
+            }
+        }
     }
-}
+
+
 }

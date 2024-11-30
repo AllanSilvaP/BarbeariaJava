@@ -5,6 +5,8 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 
+import javax.swing.JOptionPane;
+
 import org.mindrot.jbcrypt.BCrypt;
 
 public class ContaDAO {
@@ -40,7 +42,7 @@ public class ContaDAO {
                     boolean resultado = BCrypt.checkpw(Senha, senhaCripto);
                     return resultado;
                 } else {
-                    System.out.println("Email não encontrado.");  // Debug
+                    JOptionPane.showMessageDialog(null, "Email não encontrado.");  // Debug
                 }
             }
         } catch (SQLException e) {

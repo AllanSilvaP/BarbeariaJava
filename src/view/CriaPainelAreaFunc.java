@@ -5,15 +5,19 @@ import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.sql.SQLException;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.List;
 
 //outras pastas
 import dao.ContaDAO;
 import dao.EstoqueDAO;
+import dao.AgendaDAO;
 import dao.BarbeiroDAO;
 import dao.ServicoDAO;
 import model.Produto;
 import model.Servico;
+import model.Agendamento;
 
 // Painel de Área Funcional do Funcionário
 public class CriaPainelAreaFunc extends MontaPainel {
@@ -36,6 +40,11 @@ public class CriaPainelAreaFunc extends MontaPainel {
     private JButton btGerenciaBarbeiro = new JButton("Gerenciar Barbeiros");
     private JButton btGerenciarServicos = new JButton("Gerenciar Servicos");
     private JButton btSair = new JButton("Sair");
+
+    // bt metodoAgenda
+    private JButton btVerAgendamentos;
+    private JButton btAlterarAgendamento;
+    private JButton btExcluirAgendamento;
 
     public CriaPainelAreaFunc(CardLayout mudarTela, JPanel painelReferenciado) {
         this.mudaTelaFunc = mudarTela;
@@ -177,9 +186,11 @@ public class CriaPainelAreaFunc extends MontaPainel {
         });
     }
 
+    @SuppressWarnings("unused")
     private JPanel criaPainelFunc1() {
         setBackground(new Color(51, 51, 51));
         painelFunc1 = new JPanel();
+        painelFunc1.setBackground(getBackground());
         painelFunc1.setLayout(new BoxLayout(painelFunc1, BoxLayout.Y_AXIS));
 
         JLabel titulo = new JLabel("Selecione o que desejar!");
@@ -223,12 +234,174 @@ public class CriaPainelAreaFunc extends MontaPainel {
         return painelFunc1;
     }
 
-    private JPanel criaGerenciaAgenda() {
-        setBackground(new Color(51, 51, 51));
-        JPanel gerenciaAgenda = new JPanel();
-        return gerenciaAgenda;
+    public JPanel criaGerenciaAgenda() {
+        JPanel painelGerenciaAgenda = new JPanel();
+        painelGerenciaAgenda.setBackground(new Color(51, 51, 51));
+        painelGerenciaAgenda.setLayout(new BoxLayout(painelGerenciaAgenda, BoxLayout.Y_AXIS));
+
+        // Título
+        JLabel titulo = new JLabel("Gerenciamento de Agendamentos");
+        titulo.setAlignmentX(Component.CENTER_ALIGNMENT);
+        titulo.setFont(new Font("Arial", Font.BOLD, 20));
+        titulo.setForeground(Color.WHITE);
+        painelGerenciaAgenda.add(titulo);
+        painelGerenciaAgenda.add(Box.createRigidArea(new Dimension(0, 20)));
+
+        // Botão "Ver Agendamentos"
+        btVerAgendamentos = new JButton("Ver Agendamentos");
+        btVerAgendamentos.setAlignmentX(Component.CENTER_ALIGNMENT);
+        painelGerenciaAgenda.add(btVerAgendamentos);
+        painelGerenciaAgenda.add(Box.createRigidArea(new Dimension(0, 10)));
+
+        // Botão "Alterar Agendamento"
+        btAlterarAgendamento = new JButton("Alterar Agendamento");
+        btAlterarAgendamento.setAlignmentX(Component.CENTER_ALIGNMENT);
+        painelGerenciaAgenda.add(btAlterarAgendamento);
+        painelGerenciaAgenda.add(Box.createRigidArea(new Dimension(0, 10)));
+
+        // Botão "Excluir Agendamento"
+        btExcluirAgendamento = new JButton("Excluir Agendamento");
+        btExcluirAgendamento.setAlignmentX(Component.CENTER_ALIGNMENT);
+        painelGerenciaAgenda.add(btExcluirAgendamento);
+        painelGerenciaAgenda.add(Box.createRigidArea(new Dimension(0, 10)));
+
+        // Botão "Sair"
+        btSair = new JButton("Sair");
+        btSair.setAlignmentX(Component.CENTER_ALIGNMENT);
+        painelGerenciaAgenda.add(btSair);
+        painelGerenciaAgenda.add(Box.createRigidArea(new Dimension(0, 20)));
+
+        adicionarAcoes();
+
+        return painelGerenciaAgenda;
     }
 
+    @SuppressWarnings("unused")
+    private void adicionarAcoes() {
+        btVerAgendamentos.addActionListener(e -> verAgendamentos());
+        btAlterarAgendamento.addActionListener(e -> alterarAgendamento());
+        btExcluirAgendamento.addActionListener(e -> excluirAgendamento());
+        btSair.addActionListener(e -> sairDoPainel());
+    }
+
+    private void verAgendamentos() {
+        try {
+            AgendaDAO AgendaDAO = new AgendaDAO();
+            List<Agendamento> agendamentos = AgendaDAO.listarAgendamentos();
+
+            String[] colunas = { "ID", "Cliente", "Serviço", "Data", "Hora" };
+            String[][] dados = new String[agendamentos.size()][5];
+
+            for (int i = 0; i < agendamentos.size(); i++) {
+                Agendamento agendamento = agendamentos.get(i);
+                dados[i][0] = String.valueOf(agendamento.getId());
+                dados[i][1] = agendamento.getCliente();
+                dados[i][2] = agendamento.getServico();
+                dados[i][3] = agendamento.getData();
+                dados[i][4] = agendamento.getHora();
+            }
+
+            JTable tabelaAgendamentos = new JTable(dados, colunas);
+            JScrollPane scrollPane = new JScrollPane(tabelaAgendamentos);
+            JOptionPane.showMessageDialog(null, scrollPane, "Lista de Agendamentos", JOptionPane.PLAIN_MESSAGE);
+        } catch (Exception ex) {
+            JOptionPane.showMessageDialog(null, "Erro ao listar agendamentos: " + ex.getMessage());
+        }
+    }
+
+    private void alterarAgendamento() {
+        JTextField txtIdAgendamento = new JTextField();
+        int result = JOptionPane.showConfirmDialog(null, new Object[] {
+                "ID do Agendamento:", txtIdAgendamento
+        }, "Alterar Agendamento", JOptionPane.OK_CANCEL_OPTION);
+
+        if (result == JOptionPane.OK_OPTION) {
+            try {
+                AgendaDAO agendaDAO = new AgendaDAO();
+                Agendamento agendamento = agendaDAO
+                        .buscarAgendamentoPorId(Integer.parseInt(txtIdAgendamento.getText()));
+
+                if (agendamento != null) {
+                    // Panel para editar os campos
+                    JPanel painelAlterar = new JPanel(new GridLayout(4, 2, 10, 10));
+                    painelAlterar.add(new JLabel("Cliente:"));
+                    JTextField txtCliente = new JTextField(agendamento.getCliente());
+                    painelAlterar.add(txtCliente);
+
+                    painelAlterar.add(new JLabel("Serviço:"));
+                    JTextField txtServico = new JTextField(agendamento.getServico());
+                    painelAlterar.add(txtServico);
+
+                    painelAlterar.add(new JLabel("Data (yyyy-mm-dd):"));
+                    JTextField txtData = new JTextField(agendamento.getData());
+                    painelAlterar.add(txtData);
+
+                    painelAlterar.add(new JLabel("Hora (hh:mm):"));
+                    JTextField txtHora = new JTextField(agendamento.getHora());
+                    painelAlterar.add(txtHora);
+
+                    int alterResult = JOptionPane.showConfirmDialog(null, painelAlterar, "Alterar Agendamento",
+                            JOptionPane.OK_CANCEL_OPTION);
+                    if (alterResult == JOptionPane.OK_OPTION) {
+                        // Buscar o ID do Cliente e do Serviço a partir dos nomes
+                        int idCliente = buscarIdCliente(txtCliente.getText());
+                        int idServico = buscarIdServico(txtServico.getText());
+
+                        // Combinar data e hora em LocalDateTime
+                        String dataHoraStr = txtData.getText() + " " + txtHora.getText();
+                        LocalDateTime novoHorario = LocalDateTime.parse(dataHoraStr,
+                                DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm"));
+
+                        // Alterar o agendamento
+                        agendaDAO.alterarAgendamento(agendamento.getId(), idCliente, idServico, novoHorario,
+                                "Confirmado"); // O status pode ser alterado conforme necessidade
+                        JOptionPane.showMessageDialog(null, "Agendamento alterado com sucesso!");
+                    }
+                } else {
+                    JOptionPane.showMessageDialog(null, "Agendamento não encontrado.");
+                }
+            } catch (Exception e) {
+                e.printStackTrace();
+                JOptionPane.showMessageDialog(null, "Erro ao alterar agendamento.");
+            }
+        }
+    }
+
+    private int buscarIdCliente(String nomeCliente) {
+        AgendaDAO agendaDAO = new AgendaDAO();
+        // Método que já existe no seu AgendaDAO para obter o ID do Cliente pelo nome
+        return agendaDAO.obterIdClientePorNome(nomeCliente);
+    }
+    
+    private int buscarIdServico(String nomeServico) {
+        AgendaDAO agendaDAO = new AgendaDAO();
+        // Método para buscar o ID do Serviço (você pode criar esse método no AgendaDAO)
+        return agendaDAO.obterIdServicoPorNome(nomeServico);  // Criar esse método similar ao de cliente
+    }    
+
+    private void excluirAgendamento() {
+        JTextField txtIdAgendamento = new JTextField();
+        int result = JOptionPane.showConfirmDialog(null, new Object[] {
+                "ID do Agendamento:", txtIdAgendamento
+        }, "Excluir Agendamento", JOptionPane.OK_CANCEL_OPTION);
+
+        if (result == JOptionPane.OK_OPTION) {
+            try {
+                AgendaDAO AgendaDAO = new AgendaDAO();
+                AgendaDAO.excluirAgendamento(Integer.parseInt(txtIdAgendamento.getText()));
+                JOptionPane.showMessageDialog(null, "Agendamento excluído com sucesso!");
+            } catch (Exception ex) {
+                JOptionPane.showMessageDialog(null, "Erro ao excluir agendamento: " + ex.getMessage());
+            }
+        }
+    }
+
+    private void sairDoPainel() {
+        JOptionPane.showMessageDialog(null, "Voltando ao menu principal...");
+        // Implementar lógica para retornar ao menu principal.
+    }
+
+    @SuppressWarnings("unused")
     private JPanel criaGerenciaEstoque() {
         setBackground(new Color(51, 51, 51));
         JPanel painelEstoque = new JPanel();
@@ -463,183 +636,170 @@ public class CriaPainelAreaFunc extends MontaPainel {
         return painelBarbeiro;
     }
 
-    private JPanel criaGerenciaServico() {
-        setBackground(new Color(51, 51, 51));
-        JPanel painelServico = new JPanel();
-        painelServico.setBackground(getBackground());
-        painelServico.setLayout(new BoxLayout(painelServico, BoxLayout.Y_AXIS));
-    
+    @SuppressWarnings("unused")
+    public JPanel criaGerenciaServico() {
+        JPanel painelServico = new JPanel(new GridBagLayout());
+        painelServico.setBackground(new Color(51, 51, 51));
+        GridBagConstraints gbc = new GridBagConstraints();
+        gbc.insets = new Insets(10, 10, 10, 10); // Espaçamento entre componentes
+        gbc.fill = GridBagConstraints.HORIZONTAL;
+        gbc.weightx = 1.0;
+
         // Título
+        gbc.gridx = 0;
+        gbc.gridy = 0;
+        gbc.gridwidth = 2;
         JLabel tituloLabel = new JLabel("Gerenciar Serviços", JLabel.CENTER);
         tituloLabel.setForeground(Color.WHITE);
         tituloLabel.setFont(new Font("Arial", Font.BOLD, 18));
-        painelServico.add(tituloLabel);
-        painelServico.add(Box.createRigidArea(new Dimension(0, 10)));
-    
-        // Botão para adicionar serviço
+        painelServico.add(tituloLabel, gbc);
+
+        // Botão Adicionar Serviço
+        gbc.gridy++;
+        gbc.gridwidth = 1;
         JButton btAdicionarServico = new JButton("Adicionar Serviço");
-        btAdicionarServico.setAlignmentX(Component.CENTER_ALIGNMENT);
-        painelServico.add(btAdicionarServico);
-        painelServico.add(Box.createRigidArea(new Dimension(0, 10)));
-    
-        // Ação do botão Adicionar
-        btAdicionarServico.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                JPanel painelAdd = new JPanel(new GridLayout(5, 2, 10, 10));
-                painelAdd.add(new JLabel("Nome do Serviço:"));
-                JTextField txtNomeServico = new JTextField();
-                painelAdd.add(txtNomeServico);
-    
-                painelAdd.add(new JLabel("Descrição:"));
-                JTextField txtDescricaoServico = new JTextField();
-                painelAdd.add(txtDescricaoServico);
-    
-                painelAdd.add(new JLabel("Duração (HH:mm):"));
-                JTextField txtDuracaoServico = new JTextField();
-                painelAdd.add(txtDuracaoServico);
-    
-                painelAdd.add(new JLabel("Preço:"));
-                JTextField txtPrecoServico = new JTextField();
-                painelAdd.add(txtPrecoServico);
-    
-                int result = JOptionPane.showConfirmDialog(null, painelAdd, "Adicionar Serviço", JOptionPane.OK_CANCEL_OPTION);
-                if (result == JOptionPane.OK_OPTION) {
-                    String nome = txtNomeServico.getText();
-                    String descricao = txtDescricaoServico.getText();
-                    String duracao = txtDuracaoServico.getText();
-                    double preco = Double.parseDouble(txtPrecoServico.getText());
-    
-                    try {
-                        ServicoDAO servicoDAO = new ServicoDAO();
-                        servicoDAO.adicionarServico(nome, descricao, duracao, preco);
-                        JOptionPane.showMessageDialog(null, "Serviço adicionado com sucesso!");
-                    } catch (SQLException ex) {
-                        JOptionPane.showMessageDialog(null, "Erro ao adicionar serviço: " + ex.getMessage());
-                    }
-                }
-            }
-        });
-    
-        // Botão para excluir serviço
+        painelServico.add(btAdicionarServico, gbc);
+
+        // Botão Excluir Serviço
+        gbc.gridy++;
         JButton btExcluirServico = new JButton("Excluir Serviço");
-        btExcluirServico.setAlignmentX(Component.CENTER_ALIGNMENT);
-        painelServico.add(btExcluirServico);
-        painelServico.add(Box.createRigidArea(new Dimension(0, 10)));
-    
-        // Ação do botão Excluir
-        btExcluirServico.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                JTextField txtIdServicoExcluir = new JTextField();
-                int result = JOptionPane.showConfirmDialog(null, new Object[] {
-                    "ID do Serviço:", txtIdServicoExcluir }, "Excluir Serviço", JOptionPane.OK_CANCEL_OPTION);
-                if (result == JOptionPane.OK_OPTION) {
-                    try {
-                        int idServico = Integer.parseInt(txtIdServicoExcluir.getText());
-                        ServicoDAO servicoDAO = new ServicoDAO();
-                        servicoDAO.excluirServico(idServico);
-                        JOptionPane.showMessageDialog(null, "Serviço excluído com sucesso!");
-                    } catch (Exception ex) {
-                        JOptionPane.showMessageDialog(null, "Erro ao excluir serviço: " + ex.getMessage());
-                    }
-                }
-            }
-        });
-    
-        // Botão para visualizar serviços
+        painelServico.add(btExcluirServico, gbc);
+
+        // Botão Verificar Serviços
+        gbc.gridy++;
         JButton btVerificarServico = new JButton("Verificar Serviços");
-        btVerificarServico.setAlignmentX(Component.CENTER_ALIGNMENT);
-        painelServico.add(btVerificarServico);
-        painelServico.add(Box.createRigidArea(new Dimension(0, 10)));
-    
-        // Ação do botão Verificar
-        btVerificarServico.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                try {
-                    // Exibir a tabela de serviços
-                    JPanel painelTabela = new JPanel(new BorderLayout());
-                    ServicoDAO servicoDAO = new ServicoDAO();
-                    List<Servico> servicos = servicoDAO.listarServicos();
-    
-                    String[] colunas = { "ID", "Nome", "Descrição", "Duração", "Preço" };
-                    String[][] dados = new String[servicos.size()][5];
-    
-                    for (int i = 0; i < servicos.size(); i++) {
-                        Servico servico = servicos.get(i);
-                        dados[i][0] = String.valueOf(servico.getId());
-                        dados[i][1] = servico.getNome();
-                        dados[i][2] = servico.getDescricao();
-                        dados[i][3] = servico.getDuracao();
-                        dados[i][4] = String.format("%.2f", servico.getPreco());
-                    }
-    
-                    JTable tabelaServico = new JTable(dados, colunas);
-                    tabelaServico.setEnabled(false);
-                    JScrollPane scrollPane = new JScrollPane(tabelaServico);
-    
-                    painelTabela.add(scrollPane, BorderLayout.CENTER);
-                    JOptionPane.showMessageDialog(null, painelTabela, "Serviços Cadastrados", JOptionPane.PLAIN_MESSAGE);
-                } catch (Exception ex) {
-                    JOptionPane.showMessageDialog(null, "Erro ao verificar serviços: " + ex.getMessage());
-                }
-            }
-        });
-    
-        // Botão para alterar serviço (integrado ao painel de serviços)
+        painelServico.add(btVerificarServico, gbc);
+
+        // Botão Alterar Serviço
+        gbc.gridy++;
         JButton btAlterarServico = new JButton("Alterar Serviço");
-        btAlterarServico.setAlignmentX(Component.CENTER_ALIGNMENT);
-        painelServico.add(btAlterarServico);
-        painelServico.add(Box.createRigidArea(new Dimension(0, 10)));
-    
-        btAlterarServico.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                JTextField txtIdServicoAlterar = new JTextField();
-                int result = JOptionPane.showConfirmDialog(null, new Object[] {
-                    "ID do Serviço a Alterar:", txtIdServicoAlterar }, "Alterar Serviço", JOptionPane.OK_CANCEL_OPTION);
-                if (result == JOptionPane.OK_OPTION) {
-                    try {
-                        int idServico = Integer.parseInt(txtIdServicoAlterar.getText());
-                        ServicoDAO servicoDAO = new ServicoDAO();
-                        Servico servico = servicoDAO.buscarServicoPorId(idServico);
-    
-                        if (servico != null) {
-                            // Exibe os dados do serviço para alteração
-                            JPanel painelAlterar = new JPanel(new GridLayout(5, 2, 10, 10));
-                            painelAlterar.add(new JLabel("Nome do Serviço:"));
-                            JTextField txtNomeAlterar = new JTextField(servico.getNome());
-                            painelAlterar.add(txtNomeAlterar);
-    
-                            painelAlterar.add(new JLabel("Descrição:"));
-                            JTextField txtDescricaoAlterar = new JTextField(servico.getDescricao());
-                            painelAlterar.add(txtDescricaoAlterar);
-    
-                            painelAlterar.add(new JLabel("Duração (HH:mm):"));
-                            JTextField txtDuracaoAlterar = new JTextField(servico.getDuracao());
-                            painelAlterar.add(txtDuracaoAlterar);
-    
-                            painelAlterar.add(new JLabel("Preço:"));
-                            JTextField txtPrecoAlterar = new JTextField(String.valueOf(servico.getPreco()));
-                            painelAlterar.add(txtPrecoAlterar);
-    
-                            int alterResult = JOptionPane.showConfirmDialog(null, painelAlterar, "Alterar Serviço", JOptionPane.OK_CANCEL_OPTION);
-                            if (alterResult == JOptionPane.OK_OPTION) {
-                                servicoDAO.alterarServico(idServico, txtNomeAlterar.getText(), txtDescricaoAlterar.getText(),
-                                                          txtDuracaoAlterar.getText(), Double.parseDouble(txtPrecoAlterar.getText()));
-                                JOptionPane.showMessageDialog(null, "Serviço alterado com sucesso!");
-                            }
-                        } else {
-                            JOptionPane.showMessageDialog(null, "Serviço não encontrado!");
-                        }
-                    } catch (Exception ex) {
-                        JOptionPane.showMessageDialog(null, "Erro ao alterar serviço: " + ex.getMessage());
-                    }
-                }
-            }
-        });
-    
+        painelServico.add(btAlterarServico, gbc);
+
+        // Ações dos botões
+        btAdicionarServico.addActionListener(e -> adicionarServico());
+        btExcluirServico.addActionListener(e -> excluirServico());
+        btVerificarServico.addActionListener(e -> verificarServicos());
+        btAlterarServico.addActionListener(e -> alterarServico());
+
         return painelServico;
-    }    
+    }
+
+    private void adicionarServico() {
+        JPanel painelAdd = new JPanel(new GridLayout(5, 2, 10, 10));
+        painelAdd.add(new JLabel("Nome do Serviço:"));
+        JTextField txtNomeServico = new JTextField();
+        painelAdd.add(txtNomeServico);
+
+        painelAdd.add(new JLabel("Descrição:"));
+        JTextField txtDescricaoServico = new JTextField();
+        painelAdd.add(txtDescricaoServico);
+
+        painelAdd.add(new JLabel("Duração (HH:mm):"));
+        JTextField txtDuracaoServico = new JTextField();
+        painelAdd.add(txtDuracaoServico);
+
+        painelAdd.add(new JLabel("Preço:"));
+        JTextField txtPrecoServico = new JTextField();
+        painelAdd.add(txtPrecoServico);
+
+        int result = JOptionPane.showConfirmDialog(null, painelAdd, "Adicionar Serviço", JOptionPane.OK_CANCEL_OPTION);
+        if (result == JOptionPane.OK_OPTION) {
+            try {
+                ServicoDAO servicoDAO = new ServicoDAO();
+                servicoDAO.adicionarServico(
+                        txtNomeServico.getText(),
+                        txtDescricaoServico.getText(),
+                        txtDuracaoServico.getText(),
+                        Double.parseDouble(txtPrecoServico.getText()));
+                JOptionPane.showMessageDialog(null, "Serviço adicionado com sucesso!");
+            } catch (SQLException ex) {
+                JOptionPane.showMessageDialog(null, "Erro ao adicionar serviço: " + ex.getMessage());
+            }
+        }
+    }
+
+    private void excluirServico() {
+        JTextField txtIdServicoExcluir = new JTextField();
+        int result = JOptionPane.showConfirmDialog(null, new Object[] {
+                "ID do Serviço:", txtIdServicoExcluir
+        }, "Excluir Serviço", JOptionPane.OK_CANCEL_OPTION);
+        if (result == JOptionPane.OK_OPTION) {
+            try {
+                ServicoDAO servicoDAO = new ServicoDAO();
+                servicoDAO.excluirServico(Integer.parseInt(txtIdServicoExcluir.getText()));
+                JOptionPane.showMessageDialog(null, "Serviço excluído com sucesso!");
+            } catch (Exception ex) {
+                JOptionPane.showMessageDialog(null, "Erro ao excluir serviço: " + ex.getMessage());
+            }
+        }
+    }
+
+    private void verificarServicos() {
+        try {
+            JPanel painelTabela = new JPanel(new BorderLayout());
+            ServicoDAO servicoDAO = new ServicoDAO();
+            List<Servico> servicos = servicoDAO.listarServicos();
+
+            String[] colunas = { "ID", "Nome", "Descrição", "Duração", "Preço" };
+            String[][] dados = new String[servicos.size()][5];
+            for (int i = 0; i < servicos.size(); i++) {
+                Servico servico = servicos.get(i);
+                dados[i][0] = String.valueOf(servico.getId());
+                dados[i][1] = servico.getNome();
+                dados[i][2] = servico.getDescricao();
+                dados[i][3] = servico.getDuracao();
+                dados[i][4] = String.format("%.2f", servico.getPreco());
+            }
+            JTable tabelaServico = new JTable(dados, colunas);
+            JScrollPane scrollPane = new JScrollPane(tabelaServico);
+            painelTabela.add(scrollPane, BorderLayout.CENTER);
+            JOptionPane.showMessageDialog(null, painelTabela, "Serviços Cadastrados", JOptionPane.PLAIN_MESSAGE);
+        } catch (Exception ex) {
+            JOptionPane.showMessageDialog(null, "Erro ao verificar serviços: " + ex.getMessage());
+        }
+    }
+
+    private void alterarServico() {
+        JTextField txtIdServicoAlterar = new JTextField();
+        int result = JOptionPane.showConfirmDialog(null, new Object[] {
+                "ID do Serviço a Alterar:", txtIdServicoAlterar
+        }, "Alterar Serviço", JOptionPane.OK_CANCEL_OPTION);
+        if (result == JOptionPane.OK_OPTION) {
+            try {
+                int idServico = Integer.parseInt(txtIdServicoAlterar.getText());
+                ServicoDAO servicoDAO = new ServicoDAO();
+                Servico servico = servicoDAO.buscarServicoPorId(idServico);
+                if (servico != null) {
+                    JPanel painelAlterar = new JPanel(new GridLayout(5, 2, 10, 10));
+                    painelAlterar.add(new JLabel("Nome:"));
+                    JTextField txtNome = new JTextField(servico.getNome());
+                    painelAlterar.add(txtNome);
+
+                    painelAlterar.add(new JLabel("Descrição:"));
+                    JTextField txtDescricao = new JTextField(servico.getDescricao());
+                    painelAlterar.add(txtDescricao);
+
+                    painelAlterar.add(new JLabel("Duração (HH:mm):"));
+                    JTextField txtDuracao = new JTextField(servico.getDuracao());
+                    painelAlterar.add(txtDuracao);
+
+                    painelAlterar.add(new JLabel("Preço:"));
+                    JTextField txtPreco = new JTextField(String.valueOf(servico.getPreco()));
+                    painelAlterar.add(txtPreco);
+
+                    int alterResult = JOptionPane.showConfirmDialog(null, painelAlterar, "Alterar Serviço",
+                            JOptionPane.OK_CANCEL_OPTION);
+                    if (alterResult == JOptionPane.OK_OPTION) {
+                        servicoDAO.alterarServico(idServico, txtNome.getText(), txtDescricao.getText(),
+                                txtDuracao.getText(), Double.parseDouble(txtPreco.getText()));
+                        JOptionPane.showMessageDialog(null, "Serviço alterado com sucesso!");
+                    }
+                } else {
+                    JOptionPane.showMessageDialog(null, "Serviço não encontrado!");
+                }
+            } catch (Exception ex) {
+                JOptionPane.showMessageDialog(null, "Erro ao alterar serviço: " + ex.getMessage());
+            }
+        }
+    }
 }

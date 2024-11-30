@@ -3,6 +3,9 @@ package view;
 import javax.swing.*;
 import java.awt.*;
 
+//import imagens
+import resources.*;
+
 // Painel de Preços
 public class CriaPainelPrecos extends MontaPainel {
     private final JLabel Corte;
@@ -33,12 +36,12 @@ public class CriaPainelPrecos extends MontaPainel {
         setBackground(new Color(51, 51, 51));
 
         // Configurar ícones de preços
-        colocarIcone(Corte, "9009.jpg", 75);
-        colocarIcone(Barba, "9009.jpg", 75);
-        colocarIcone(Pigmentado, "9009.jpg", 75);
-        colocarIcone(Luzes, "9009.jpg", 75);
-        colocarIcone(Progressiva, "9009.jpg", 75);
-        colocarIcone(LimpPele, "9009.jpg", 75);
+        colocarIcone(Corte, "/resources/Corte.png", 125);
+        colocarIcone(Barba, "/resources/Barba.png", 125);
+        colocarIcone(Pigmentado, "/resources/Pigmentado.png", 125);
+        colocarIcone(Luzes, "/resources/Luzes.png", 125);
+        colocarIcone(Progressiva, "/resources/Progressiva.png", 125);
+        colocarIcone(LimpPele, "/resources/Limpeza.png", 125);
 
         // Textos descritivos
         valor1 = customizarEstiloLabel("R$35\nCorte");
@@ -64,7 +67,7 @@ public class CriaPainelPrecos extends MontaPainel {
     }
 
     private void colocarIcone(JLabel label, String caminhoArquivo, int tamanho) {
-        ImageIcon icon = new ImageIcon(getClass().getResource("barbearia-frente.png"));
+        ImageIcon icon = new ImageIcon(getClass().getResource(caminhoArquivo));
         Image img = icon.getImage().getScaledInstance(tamanho, tamanho, Image.SCALE_SMOOTH);
         label.setIcon(new ImageIcon(img));
         label.setHorizontalAlignment(JLabel.CENTER);
