@@ -1,18 +1,44 @@
-## Getting Started
+## Barbearia Aguia Real - Introdução
 
-Welcome to the VS Code Java world. Here is a guideline to help you get started to write Java code in Visual Studio Code.
+- O projeto consiste em um sistema para uma barbearia real denominado **Barbearia Aguia Real**.
+- Foi implementado utilizando **Java** como linguagem de programação, com integração a um banco de dados relacional **MySQL**.
 
-## Folder Structure
+## Descrição do Projeto
 
-The workspace contains two folders by default, where:
+- A arquitetura do projeto segue o padrão **DAO (Data Access Object)**, **Controller** e **Model**, proporcionando uma modularização coerente e de fácil compreensão, mesmo com a presença de um volume significativo de código.
+- O sistema permite a criação de contas para diferentes tipos de usuários (funcionários e clientes). 
+- Funcionários possuem acesso a funcionalidades administrativas, como:
+  - Gerenciar Estoque;
+  - Gerenciar Barbeiro;
+  - Gerenciar Serviços;
+  - Gerenciar Agendamentos;
+  - Entre outras operações.
+- Clientes possuem acesso ao painel de agendamento ondem podem deixar agendado o seu serviço
 
-- `src`: the folder to maintain sources
-- `lib`: the folder to maintain dependencies
+## Como Configurar o Projeto Localmente
 
-Meanwhile, the compiled output files will be generated in the `bin` folder by default.
+- Para executar o projeto localmente, siga os passos abaixo:
 
-> If you want to customize the folder structure, open `.vscode/settings.json` and update the related settings there.
+1. **Adicionar Bibliotecas Necessárias:**
+   - Certifique-se de adicionar as bibliotecas (libraries) requeridas à IDE utilizada. O processo de referência das bibliotecas pode variar dependendo da IDE escolhida.
+   - Dica: Observe a pasta **Lib** quais sãos as libraries utilizadas
 
-## Dependency Management
+2. **Configurar Conexão com o Banco de Dados:**
+   - Edite o arquivo `ConectaDB.java`, localizado na pasta **DAO**, ajustando o trecho relacionado às variáveis de conexão:
 
-The `JAVA PROJECTS` view allows you to manage your dependencies. More details can be found [here](https://github.com/microsoft/vscode-java-dependency#manage-dependencies).
+```java
+// Variáveis para conexão
+private static final String url = "jdbc:mysql://db-barbearia-aguia-real.c7miwyc2szll.us-east-2.rds.amazonaws.com:3306/Barbearia";
+private static final String username = "Allan";
+private static final String password = "Banco.top";
+```
+
+- Substitua:
+  - **`url`** pelo link do seu servidor de banco de dados;
+  - **`user`** pelo nome de usuário para acesso ao banco de dados;
+  - **`password`** pela senha correspondente.
+
+3. **Executar a Classe Principal:**
+   - Navegue até a classe `Main.java`, localizada na pasta **App**, e execute o arquivo para iniciar o sistema.
+
+
